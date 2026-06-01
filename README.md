@@ -2,6 +2,8 @@
 
 Credit: this integration is based on the reverse-engineered work in [`okko/plugit-charger-control`](https://github.com/okko/plugit-charger-control).
 
+[![Open your Home Assistant instance and show the integration in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?repository=eranjo/homeassistant-plugit-charger-control&category=integration)
+
 [![GitHub release](https://img.shields.io/github/v/release/eranjo/homeassistant-plugit-charger-control?style=for-the-badge)](https://github.com/eranjo/homeassistant-plugit-charger-control/releases)
 [![HACS](https://img.shields.io/badge/HACS-Custom%20Integration-41BDF5?style=for-the-badge)](https://hacs.xyz/)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Custom%20Integration-03A9F4?style=for-the-badge)](https://www.home-assistant.io/)
