@@ -1,0 +1,14 @@
+{
+  "domain": "plugit_charger_control",
+  "name": "Plugit EV Charger",
+  "codeowners": [],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/okko/plugit-charger-control",
+  "homeassistant": "2024.8.0",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/okko/plugit-charger-control/issues",
+  "loggers": ["custom_components.plugit_charger_control"],
+  "version": "0.1.0"
+}
+

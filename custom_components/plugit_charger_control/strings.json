@@ -1,0 +1,30 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Plugit",
+        "description": "Enter your Plugit account credentials to discover chargers.",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        }
+      },
+      "select_charger": {
+        "title": "Select charger",
+        "description": "Choose which discovered charger Home Assistant should manage.",
+        "data": {
+          "charger_selection": "Charger"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Unable to connect to Plugit.",
+      "invalid_auth": "Invalid username or password.",
+      "no_chargers": "No chargers were found for this account."
+    },
+    "abort": {
+      "already_configured": "This charger is already configured."
+    }
+  }
+}
+
