@@ -132,11 +132,12 @@ class PlugitStatusSensor(_BasePlugitSensor):
     def extra_state_attributes(self) -> Dict[str, Any]:
         if self.coordinator.data is None:
             return {}
+        raw = self.coordinator.data.raw
         return {
-            "chargePointId": self.coordinator.data.charge_point_id,
-            "chargeBoxGroupId": self.coordinator.data.charge_box_group_id,
-            "chargeBoxId": self.coordinator.data.charge_box_id,
             ATTR_STATUS: self.coordinator.data.status,
+            "power": raw.get("power"),
+            "powerType": raw.get("powerType"),
+            "socketType": raw.get("socketType"),
             ATTR_LAST_SUCCESSFUL_REFRESH: self.coordinator.last_successful_refresh,
         }
 
@@ -156,6 +157,18 @@ class PlugitPowerSensor(_BasePlugitSensor):
     def native_value(self) -> Optional[float]:
         return self.coordinator.current_power_w
 
+    @property
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        if self.coordinator.data is None:
+            return {}
+        raw = self.coordinator.data.raw
+        return {
+            ATTR_STATUS: self.coordinator.data.status,
+            "powerType": raw.get("powerType"),
+            "socketType": raw.get("socketType"),
+            ATTR_LAST_SUCCESSFUL_REFRESH: self.coordinator.last_successful_refresh,
+        }
+
 
 class PlugitChargingDurationSensor(_BasePlugitSensor):
     """Expose the charging duration for the current or last session."""
@@ -171,6 +184,16 @@ class PlugitChargingDurationSensor(_BasePlugitSensor):
     @property
     def native_value(self) -> Optional[float]:
         return self.coordinator.charging_duration_seconds
+
+    @property
+    def extra_state_attributes(self) -> Dict[str, Any]:
+        if self.coordinator.data is None:
+            return {}
+        return {
+            ATTR_STATUS: self.coordinator.data.status,
+            "chargingSessionStartedAt": self.coordinator.charging_session_started_at,
+            ATTR_LAST_SUCCESSFUL_REFRESH: self.coordinator.last_successful_refresh,
+        }
 
 
 class PlugitLastRefreshSensor(_BasePlugitSensor):
