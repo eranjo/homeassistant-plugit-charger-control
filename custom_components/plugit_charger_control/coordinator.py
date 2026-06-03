@@ -146,3 +146,5 @@ class PlugitDataUpdateCoordinator(DataUpdateCoordinator):
                 self.config_entry,
                 options=new_options,
             )
+
+        await self.async_request_refresh()

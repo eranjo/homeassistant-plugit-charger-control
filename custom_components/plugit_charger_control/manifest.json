@@ -9,5 +9,5 @@
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/okko/plugit-charger-control/issues",
   "loggers": ["custom_components.plugit_charger_control"],
-  "version": "0.1.5"
+  "version": "0.1.6"
 }
