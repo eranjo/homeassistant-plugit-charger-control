@@ -10,6 +10,7 @@ from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
+    SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
@@ -42,6 +43,24 @@ STATUS_SENSOR = PlugitSensorDescription(
     state_class=None,
 )
 
+POWER_SENSOR = PlugitSensorDescription(
+    key="power",
+    name="Power",
+    icon="mdi:flash",
+    device_class=SensorDeviceClass.POWER,
+    native_unit_of_measurement="W",
+    state_class=SensorStateClass.MEASUREMENT,
+)
+
+CHARGING_DURATION_SENSOR = PlugitSensorDescription(
+    key="charging_duration",
+    name="Charging duration",
+    icon="mdi:timer-outline",
+    device_class=SensorDeviceClass.DURATION,
+    native_unit_of_measurement="s",
+    state_class=SensorStateClass.MEASUREMENT,
+)
+
 LAST_REFRESH_SENSOR = PlugitSensorDescription(
     key="last_refresh",
     name="Last successful refresh",
@@ -61,6 +80,8 @@ async def async_setup_entry(
     async_add_entities(
         [
             PlugitStatusSensor(coordinator, STATUS_SENSOR),
+            PlugitPowerSensor(coordinator, POWER_SENSOR),
+            PlugitChargingDurationSensor(coordinator, CHARGING_DURATION_SENSOR),
             PlugitLastRefreshSensor(coordinator, LAST_REFRESH_SENSOR),
         ]
     )
@@ -118,6 +139,38 @@ class PlugitStatusSensor(_BasePlugitSensor):
             ATTR_STATUS: self.coordinator.data.status,
             ATTR_LAST_SUCCESSFUL_REFRESH: self.coordinator.last_successful_refresh,
         }
+
+
+class PlugitPowerSensor(_BasePlugitSensor):
+    """Expose the current charger power."""
+
+    @property
+    def unique_id(self) -> str:
+        return "%s_%s_%s_power" % (
+            self.coordinator.charge_point_id,
+            self.coordinator.charge_box_group_id,
+            self.coordinator.charge_box_id,
+        )
+
+    @property
+    def native_value(self) -> Optional[float]:
+        return self.coordinator.current_power_w
+
+
+class PlugitChargingDurationSensor(_BasePlugitSensor):
+    """Expose the charging duration for the current or last session."""
+
+    @property
+    def unique_id(self) -> str:
+        return "%s_%s_%s_charging_duration" % (
+            self.coordinator.charge_point_id,
+            self.coordinator.charge_box_group_id,
+            self.coordinator.charge_box_id,
+        )
+
+    @property
+    def native_value(self) -> Optional[float]:
+        return self.coordinator.charging_duration_seconds
 
 
 class PlugitLastRefreshSensor(_BasePlugitSensor):

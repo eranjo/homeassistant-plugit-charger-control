@@ -23,6 +23,7 @@ This integration is based on the reverse-engineered flow from the original `plug
 - Polling via `DataUpdateCoordinator`
 - Start charging and stop charging buttons
 - Raw charger status sensor
+- Current power sensor and charging duration sensor
 - Binary sensors for charging activity and cable connection
 - Editable refresh interval number entity
 - Diagnostics with selected charger IDs
@@ -60,10 +61,14 @@ The integration stores:
 - `button.plugit_start_charging`
 - `button.plugit_stop_charging`
 - `sensor.plugit_status`
+- `sensor.plugit_power`
+- `sensor.plugit_charging_duration`
 - `sensor.plugit_last_successful_refresh`
 - `binary_sensor.plugit_charging_active`
 - `binary_sensor.plugit_cable_connected`
 - `number.plugit_refresh_interval`
+
+The charging duration sensor is derived from the charger status timeline. It starts when the charger enters `Charging` and keeps the last session length after charging stops.
 
 ## Example automation
 

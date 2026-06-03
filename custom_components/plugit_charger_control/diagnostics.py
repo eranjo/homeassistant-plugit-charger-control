@@ -25,6 +25,16 @@ from .const import (
 )
 
 
+def _redact_nested(data: Dict[str, Any], path: tuple[str, ...]) -> None:
+    current: Any = data
+    for key in path[:-1]:
+        if not isinstance(current, dict):
+            return
+        current = current.get(key)
+    if isinstance(current, dict) and path[-1] in current:
+        current[path[-1]] = "REDACTED"
+
+
 async def async_get_config_entry_diagnostics(hass: Any, entry: Any) -> Dict[str, Any]:
     """Return diagnostics for a config entry."""
 
@@ -50,5 +60,9 @@ async def async_get_config_entry_diagnostics(hass: Any, entry: Any) -> Dict[str,
         },
         "last_successful_refresh": getattr(coordinator, "last_successful_refresh", None),
     }
-    return async_redact_data(payload, {CONF_PASSWORD})
-
+    redacted = async_redact_data(payload, {CONF_PASSWORD})
+    _redact_nested(redacted, ("config", CONF_USERNAME))
+    _redact_nested(redacted, ("charger", "display_name"))
+    _redact_nested(redacted, ("charger", "raw", "transactionId"))
+    _redact_nested(redacted, ("charger", "raw", "uniqueId"))
+    return redacted

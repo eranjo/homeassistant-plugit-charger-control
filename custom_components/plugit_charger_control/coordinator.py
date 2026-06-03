@@ -14,6 +14,7 @@ from .api import (
     PlugitCharger,
 )
 from .const import CONF_REFRESH_INTERVAL, DEFAULT_SCAN_INTERVAL
+from .const import STATUS_CHARGING
 
 try:  # pragma: no cover - exercised only in Home Assistant
     from homeassistant.exceptions import ConfigEntryAuthFailed
@@ -90,6 +91,69 @@ class PlugitDataUpdateCoordinator(DataUpdateCoordinator):
         self.config_entry = config_entry
         self.refresh_interval_seconds = refresh_interval_seconds
         self.last_successful_refresh: Optional[datetime] = None
+        self.current_power_w: Optional[float] = None
+        self.charging_session_started_at: Optional[datetime] = None
+        self.charging_session_duration_seconds: Optional[float] = None
+        self._charging_session_active = False
+        self._charging_session_transaction_id: Optional[str] = None
+
+    @property
+    def charging_duration_seconds(self) -> Optional[float]:
+        """Return the current or last charging session duration in seconds."""
+
+        return self.charging_session_duration_seconds
+
+    def _now(self) -> datetime:
+        return datetime.now(timezone.utc)
+
+    @staticmethod
+    def _extract_power_w(charger: PlugitCharger) -> Optional[float]:
+        raw_power = charger.raw.get("power")
+        if raw_power is None:
+            return None
+        try:
+            return float(raw_power)
+        except (TypeError, ValueError):
+            return None
+
+    @staticmethod
+    def _extract_transaction_id(charger: PlugitCharger) -> Optional[str]:
+        transaction_id = charger.raw.get("transactionId")
+        if transaction_id is None:
+            return None
+        text = str(transaction_id)
+        return text if text else None
+
+    def _update_session_tracking(self, charger: PlugitCharger, now: datetime) -> None:
+        power_w = self._extract_power_w(charger)
+        transaction_id = self._extract_transaction_id(charger)
+
+        if charger.status == STATUS_CHARGING:
+            if (
+                not self._charging_session_active
+                or transaction_id != self._charging_session_transaction_id
+            ):
+                self.charging_session_started_at = now
+                self.charging_session_duration_seconds = 0.0
+                self._charging_session_active = True
+                self._charging_session_transaction_id = transaction_id
+            else:
+                if self.charging_session_started_at is not None:
+                    elapsed_seconds = (
+                        now - self.charging_session_started_at
+                    ).total_seconds()
+                    self.charging_session_duration_seconds = max(elapsed_seconds, 0.0)
+
+            self.current_power_w = power_w
+            return
+
+        if self._charging_session_active:
+            if self.charging_session_started_at is not None:
+                elapsed_seconds = (now - self.charging_session_started_at).total_seconds()
+                self.charging_session_duration_seconds = max(elapsed_seconds, 0.0)
+            self._charging_session_active = False
+
+        self.current_power_w = power_w
 
     async def _async_update_data(self) -> PlugitCharger:
         try:
@@ -103,7 +167,9 @@ class PlugitDataUpdateCoordinator(DataUpdateCoordinator):
         except PlugitApiError as err:
             raise UpdateFailed(str(err)) from err
 
-        self.last_successful_refresh = datetime.now(timezone.utc)
+        now = self._now()
+        self._update_session_tracking(charger, now)
+        self.last_successful_refresh = now
         self.last_update_success = True
         _LOGGER.debug(
             "Refreshed Plugit charger %s with status %s",
