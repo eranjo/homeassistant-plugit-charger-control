@@ -64,6 +64,9 @@ except ImportError:  # pragma: no cover - local test fallback
 
 _LOGGER = logging.getLogger(__name__)
 
+# Keep an optimistic desired state until the polled status catches up.
+_PENDING_TIMEOUT_FLOOR_SECONDS = 180
+
 
 class PlugitDataUpdateCoordinator(DataUpdateCoordinator):
     """Poll the selected Plugit charger."""
@@ -96,12 +99,78 @@ class PlugitDataUpdateCoordinator(DataUpdateCoordinator):
         self.charging_session_duration_seconds: Optional[float] = None
         self._charging_session_active = False
         self._charging_session_transaction_id: Optional[str] = None
+        self._pending_charging: Optional[bool] = None
+        self._pending_set_at: Optional[datetime] = None
 
     @property
     def charging_duration_seconds(self) -> Optional[float]:
         """Return the current or last charging session duration in seconds."""
 
         return self.charging_session_duration_seconds
+
+    @property
+    def pending_charging(self) -> Optional[bool]:
+        """Return the desired charging state while a command is in flight."""
+
+        return self._pending_charging
+
+    @property
+    def is_command_pending(self) -> bool:
+        """Return whether a start/stop command is waiting for status confirmation."""
+
+        return self._pending_charging is not None
+
+    @property
+    def effective_charging(self) -> bool:
+        """Return charging state, preferring pending desired state when set."""
+
+        if self._pending_charging is not None:
+            return self._pending_charging
+        if self.data is None:
+            return False
+        return bool(self.data.is_charging)
+
+    def _pending_timeout_seconds(self) -> int:
+        return max(3 * int(self.refresh_interval_seconds), _PENDING_TIMEOUT_FLOOR_SECONDS)
+
+    def _set_pending_charging(self, desired: bool) -> None:
+        self._pending_charging = desired
+        self._pending_set_at = self._now()
+        _LOGGER.debug(
+            "Pending charging set to %s for charge box %s",
+            desired,
+            self.charge_box_id,
+        )
+
+    def _clear_pending_charging(self, reason: str) -> None:
+        if self._pending_charging is None:
+            return
+        _LOGGER.debug(
+            "Clearing pending charging (%s) for charge box %s: %s",
+            self._pending_charging,
+            self.charge_box_id,
+            reason,
+        )
+        self._pending_charging = None
+        self._pending_set_at = None
+
+    def _reconcile_pending_charging(self, charger: PlugitCharger, now: datetime) -> None:
+        """Clear pending state when status matches or the wait times out."""
+
+        if self._pending_charging is None:
+            return
+
+        if charger.is_charging == self._pending_charging:
+            self._clear_pending_charging("status matched")
+            return
+
+        if self._pending_set_at is None:
+            self._clear_pending_charging("missing pending timestamp")
+            return
+
+        elapsed = (now - self._pending_set_at).total_seconds()
+        if elapsed >= self._pending_timeout_seconds():
+            self._clear_pending_charging("timed out waiting for status")
 
     def _now(self) -> datetime:
         return datetime.now(timezone.utc)
@@ -169,6 +238,7 @@ class PlugitDataUpdateCoordinator(DataUpdateCoordinator):
 
         now = self._now()
         self._update_session_tracking(charger, now)
+        self._reconcile_pending_charging(charger, now)
         self.last_successful_refresh = now
         self.last_update_success = True
         _LOGGER.debug(
@@ -179,23 +249,25 @@ class PlugitDataUpdateCoordinator(DataUpdateCoordinator):
         return charger
 
     async def async_start_charging(self) -> None:
-        """Refresh state and request a remote start."""
+        """Request a remote start and hold pending on until status confirms."""
 
         await self.api.async_start_charging(
             self.charge_point_id,
             self.charge_box_group_id,
             self.charge_box_id,
         )
+        self._set_pending_charging(True)
         await self.async_request_refresh()
 
     async def async_stop_charging(self) -> None:
-        """Refresh state and request a remote stop."""
+        """Request a remote stop and hold pending off until status confirms."""
 
         await self.api.async_stop_charging(
             self.charge_point_id,
             self.charge_box_group_id,
             self.charge_box_id,
         )
+        self._set_pending_charging(False)
         await self.async_request_refresh()
 
     async def async_set_refresh_interval(self, seconds: int) -> None:

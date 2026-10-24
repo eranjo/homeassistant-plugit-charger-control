@@ -24,7 +24,7 @@
 ## Release checklist
 
 1. Run `python3 -m unittest discover -s tests -v`.
-2. Confirm charger discovery and button actions work in Home Assistant.
+2. Confirm charger discovery and the charging switch (start/stop toggle) work in Home Assistant.
 3. Verify the refresh interval number entity still updates the coordinator interval.
 4. Bump the version in `custom_components/plugit_charger_control/manifest.json`.
 5. Create a GitHub release that matches the manifest version.

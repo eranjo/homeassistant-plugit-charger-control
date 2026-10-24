@@ -52,7 +52,7 @@ except ImportError:  # pragma: no cover - local tests
             self.data = {}
 
     class Platform:  # type: ignore[override]
-        BUTTON = "button"
+        SWITCH = "switch"
         SENSOR = "sensor"
         BINARY_SENSOR = "binary_sensor"
         NUMBER = "number"
@@ -68,7 +68,7 @@ except ImportError:  # pragma: no cover - local tests
     aiohttp_client = _AiohttpClientFallback()  # type: ignore[assignment]
 
 
-PLATFORMS = [Platform.BUTTON, Platform.SENSOR, Platform.BINARY_SENSOR, Platform.NUMBER]
+PLATFORMS = [Platform.SWITCH, Platform.SENSOR, Platform.BINARY_SENSOR, Platform.NUMBER]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
