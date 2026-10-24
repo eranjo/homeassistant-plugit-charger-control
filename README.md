@@ -68,7 +68,7 @@ The integration stores:
 - `number.plugit_refresh_interval`
 
 The charging duration sensor is derived from the charger status timeline. It starts when the charger enters `Charging` and keeps the last session length after charging stops.
-The max power sensor reflects the charger capability reported by the API, not live consumption.
+The max power sensor is the configured pin/setup limit from the API (`raw.power`), not live power delivered to the car.
 The status and max power sensors also expose `powerType` and `socketType` as attributes for context.
 
 ## Example automation

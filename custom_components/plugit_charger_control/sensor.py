@@ -45,7 +45,7 @@ STATUS_SENSOR = PlugitSensorDescription(
 
 POWER_SENSOR = PlugitSensorDescription(
     key="power",
-    name="Power",
+    name="Max power",
     icon="mdi:flash",
     device_class=SensorDeviceClass.POWER,
     native_unit_of_measurement="W",
@@ -135,7 +135,7 @@ class PlugitStatusSensor(_BasePlugitSensor):
         raw = self.coordinator.data.raw
         return {
             ATTR_STATUS: self.coordinator.data.status,
-            "power": raw.get("power"),
+            "max_power": raw.get("power"),
             "powerType": raw.get("powerType"),
             "socketType": raw.get("socketType"),
             ATTR_LAST_SUCCESSFUL_REFRESH: self.coordinator.last_successful_refresh,
@@ -143,7 +143,7 @@ class PlugitStatusSensor(_BasePlugitSensor):
 
 
 class PlugitPowerSensor(_BasePlugitSensor):
-    """Expose the current charger power."""
+    """Expose the charger pin / setup max power capability (not live delivery)."""
 
     @property
     def unique_id(self) -> str:
@@ -155,7 +155,7 @@ class PlugitPowerSensor(_BasePlugitSensor):
 
     @property
     def native_value(self) -> Optional[float]:
-        return self.coordinator.current_power_w
+        return self.coordinator.max_power_w
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:

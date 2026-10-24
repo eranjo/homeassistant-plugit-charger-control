@@ -94,7 +94,7 @@ class PlugitDataUpdateCoordinator(DataUpdateCoordinator):
         self.config_entry = config_entry
         self.refresh_interval_seconds = refresh_interval_seconds
         self.last_successful_refresh: Optional[datetime] = None
-        self.current_power_w: Optional[float] = None
+        self.max_power_w: Optional[float] = None
         self.charging_session_started_at: Optional[datetime] = None
         self.charging_session_duration_seconds: Optional[float] = None
         self._charging_session_active = False
@@ -176,7 +176,9 @@ class PlugitDataUpdateCoordinator(DataUpdateCoordinator):
         return datetime.now(timezone.utc)
 
     @staticmethod
-    def _extract_power_w(charger: PlugitCharger) -> Optional[float]:
+    def _extract_max_power_w(charger: PlugitCharger) -> Optional[float]:
+        """Return configured pin/setup max power from the API (not live delivery)."""
+
         raw_power = charger.raw.get("power")
         if raw_power is None:
             return None
@@ -194,7 +196,7 @@ class PlugitDataUpdateCoordinator(DataUpdateCoordinator):
         return text if text else None
 
     def _update_session_tracking(self, charger: PlugitCharger, now: datetime) -> None:
-        power_w = self._extract_power_w(charger)
+        max_power_w = self._extract_max_power_w(charger)
         transaction_id = self._extract_transaction_id(charger)
 
         if charger.status == STATUS_CHARGING:
@@ -213,7 +215,7 @@ class PlugitDataUpdateCoordinator(DataUpdateCoordinator):
                     ).total_seconds()
                     self.charging_session_duration_seconds = max(elapsed_seconds, 0.0)
 
-            self.current_power_w = power_w
+            self.max_power_w = max_power_w
             return
 
         if self._charging_session_active:
@@ -222,7 +224,7 @@ class PlugitDataUpdateCoordinator(DataUpdateCoordinator):
                 self.charging_session_duration_seconds = max(elapsed_seconds, 0.0)
             self._charging_session_active = False
 
-        self.current_power_w = power_w
+        self.max_power_w = max_power_w
 
     async def _async_update_data(self) -> PlugitCharger:
         try:
