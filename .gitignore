@@ -3,4 +3,8 @@
 .coverage
 coverage.xml
 htmlcov/
-tests/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/

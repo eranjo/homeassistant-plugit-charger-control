@@ -47,3 +47,5 @@ jobs:
         uses: hacs/action@main
         with:
           category: integration
+          # Repo description/topics are GitHub settings outside this tree.
+          ignore: description topics
