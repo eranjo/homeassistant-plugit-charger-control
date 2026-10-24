@@ -22,7 +22,7 @@ def _sanitize_charger(charger: Any) -> Dict[str, Any]:
     raw = getattr(charger, "raw", {}) or {}
     return {
         "status": getattr(charger, "status", None),
-        "power": raw.get("power"),
+        "max_power": raw.get("power"),
         "powerType": raw.get("powerType"),
         "socketType": raw.get("socketType"),
     }

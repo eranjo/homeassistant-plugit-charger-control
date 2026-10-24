@@ -21,7 +21,7 @@ This integration is based on the reverse-engineered flow from the original `plug
 - Automatic charger discovery after sign-in
 - Charger selection UI
 - Polling via `DataUpdateCoordinator`
-- Start charging and stop charging buttons
+- Charging toggle switch (start/stop)
 - Raw charger status sensor
 - Max power sensor and charging duration sensor
 - Binary sensors for charging activity and cable connection
@@ -58,8 +58,7 @@ The integration stores:
 
 ## Example entities
 
-- `button.plugit_start_charging`
-- `button.plugit_stop_charging`
+- `switch.plugit_charging`
 - `sensor.plugit_status`
 - `sensor.plugit_max_power`
 - `sensor.plugit_charging_duration`
@@ -69,7 +68,7 @@ The integration stores:
 - `number.plugit_refresh_interval`
 
 The charging duration sensor is derived from the charger status timeline. It starts when the charger enters `Charging` and keeps the last session length after charging stops.
-The max power sensor reflects the charger capability reported by the API, not live consumption.
+The max power sensor is the configured pin/setup limit from the API (`raw.power`), not live power delivered to the car.
 The status and max power sensors also expose `powerType` and `socketType` as attributes for context.
 
 ## Example automation
@@ -86,17 +85,17 @@ condition:
     entity_id: binary_sensor.plugit_cable_connected
     state: "on"
 action:
-  - service: button.press
+  - service: switch.turn_on
     target:
-      entity_id: button.plugit_start_charging
+      entity_id: switch.plugit_charging
 mode: single
 ```
 
 ## Notes
 
 - The integration preserves the raw Plugit status values like `Available`, `Preparing`, `Charging`, `SuspendedEV`, `SuspendedEVSE`, `Finishing`, `ERROR`, and `Unavailable`.
-- Charging only starts when the charger is in a ready state.
-- The integration avoids optimistic state updates and waits for a fresh API poll after each action.
+- Charging only starts when the cable is connected and the charger status is `Preparing`. The switch is unavailable when neither start nor stop is possible.
+- After start or stop, the switch holds an optimistic pending state until a later poll confirms the new status (or until a timeout). This covers the delay before the cloud API reflects the change.
 - The refresh interval is editable from Home Assistant as a duration entity, stored in seconds internally.
 
 ## GitHub Setup

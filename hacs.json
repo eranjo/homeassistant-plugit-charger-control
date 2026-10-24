@@ -1,4 +1,5 @@
 {
-  "name": "Plugit Charger Control"
+  "name": "Plugit Charger Control",
+  "homeassistant": "2024.8.0",
+  "render_readme": true
 }
-
